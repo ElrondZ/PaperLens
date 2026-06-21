@@ -1,0 +1,508 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>PaperLens</title>
+<style>
+:root{
+  --bg:#eef7ff;
+  --bg2:#f7fbff;
+  --surface:#ffffff;
+  --surface2:#f2f8ff;
+  --ink:#172033;
+  --muted:#607086;
+  --soft:#8a9aae;
+  --line:rgba(42,101,160,.14);
+  --blue:#2488ff;
+  --blue2:#58a6ff;
+  --blue3:#dceeff;
+  --green:#30c48d;
+  --shadow:0 18px 48px rgba(35,92,148,.13);
+  --shadow2:0 8px 26px rgba(35,92,148,.09);
+  --ease:cubic-bezier(.2,.8,.2,1);
+}
+*{box-sizing:border-box}
+html,body{height:100%}
+body{
+  margin:0;
+  overflow:hidden;
+  background:
+    radial-gradient(circle at 16% 0%, rgba(88,166,255,.26), transparent 34%),
+    linear-gradient(180deg,var(--bg),#f8fbff 58%,#f4f9ff);
+  color:var(--ink);
+  font-family:-apple-system,BlinkMacSystemFont,"SF Pro Text","PingFang SC","Microsoft YaHei","Segoe UI",sans-serif;
+  -webkit-font-smoothing:antialiased;
+  text-rendering:optimizeLegibility;
+  letter-spacing:0;
+}
+button,input,select,textarea{font:inherit}
+button{border:0}
+.app{height:100vh;display:flex;flex-direction:column}
+.top{
+  flex:0 0 auto;
+  height:66px;
+  padding:0 24px;
+  display:flex;
+  align-items:center;
+  justify-content:space-between;
+  gap:18px;
+  background:rgba(247,251,255,.78);
+  border-bottom:1px solid rgba(42,101,160,.12);
+  backdrop-filter:saturate(180%) blur(22px);
+  -webkit-app-region:drag;
+}
+.brand{display:flex;align-items:center;gap:12px;min-width:190px}
+.logo{
+  width:38px;height:38px;border-radius:13px;
+  display:grid;place-items:center;
+  color:#fff;
+  background:linear-gradient(145deg,#58a6ff,#1478ec);
+  box-shadow:inset 0 1px 0 rgba(255,255,255,.36),0 10px 24px rgba(36,136,255,.28);
+}
+.logo svg{filter:drop-shadow(0 1px 2px rgba(0,0,0,.16))}
+.brand-name{font-size:17px;font-weight:720;line-height:1.1}
+.brand-sub{font-size:11px;color:var(--muted);margin-top:2px}
+.nav,.top-actions{-webkit-app-region:no-drag}
+.nav{
+  display:flex;align-items:center;gap:4px;
+  padding:4px;
+  border:1px solid rgba(42,101,160,.12);
+  border-radius:999px;
+  background:rgba(255,255,255,.62);
+  box-shadow:inset 0 1px 0 rgba(255,255,255,.74);
+}
+.nav-btn{
+  min-width:92px;
+  padding:8px 15px;
+  border-radius:999px;
+  color:var(--muted);
+  background:transparent;
+  cursor:pointer;
+  transition:background .28s var(--ease),color .28s var(--ease),box-shadow .28s var(--ease),transform .28s var(--ease);
+}
+.nav-btn:hover{color:var(--ink)}
+.nav-btn.active{background:#fff;color:var(--blue);box-shadow:0 4px 14px rgba(36,136,255,.14)}
+.icon-btn{
+  height:38px;
+  padding:0 14px;
+  border-radius:999px;
+  display:flex;align-items:center;gap:8px;
+  color:var(--ink);
+  background:rgba(255,255,255,.7);
+  border:1px solid rgba(42,101,160,.12);
+  cursor:pointer;
+  transition:transform .24s var(--ease),background .24s var(--ease),box-shadow .24s var(--ease);
+}
+.icon-btn:hover{transform:translateY(-1px);background:#fff;box-shadow:0 8px 18px rgba(35,92,148,.1)}
+.main{
+  flex:1;
+  min-height:0;
+  overflow:auto;
+  padding:30px clamp(18px,4vw,50px) 52px;
+}
+.main::-webkit-scrollbar,.drawer::-webkit-scrollbar{width:10px}
+.main::-webkit-scrollbar-thumb,.drawer::-webkit-scrollbar-thumb{background:rgba(36,136,255,.25);border-radius:999px;border:3px solid transparent;background-clip:content-box}
+.page{display:none;animation:pageIn .42s var(--ease) both}
+.page.active{display:block}
+@keyframes pageIn{from{opacity:0;transform:translateY(10px)}to{opacity:1;transform:translateY(0)}}
+.workspace{
+  width:min(1220px,100%);
+  margin:0 auto;
+  display:grid;
+  grid-template-columns:minmax(320px,430px) minmax(0,1fr);
+  gap:24px;
+  align-items:start;
+}
+.panel,.report-shell,.guide-hero,.guide-card,.setting-group{
+  background:rgba(255,255,255,.86);
+  border:1px solid rgba(42,101,160,.13);
+  box-shadow:var(--shadow2);
+  backdrop-filter:blur(16px);
+}
+.panel{border-radius:26px;padding:24px;position:sticky;top:0}
+.kicker{
+  margin:0 0 10px;
+  color:var(--blue);
+  font-size:12px;
+  font-weight:760;
+}
+.panel h1{
+  margin:0 0 10px;
+  font-size:28px;
+  line-height:1.16;
+  font-weight:800;
+}
+.subcopy{margin:0 0 20px;color:var(--muted);font-size:14px;line-height:1.75}
+.field-label{display:block;margin:0 0 8px;color:var(--muted);font-size:13px;font-weight:700}
+.query-box{
+  width:100%;
+  min-height:132px;
+  resize:vertical;
+  padding:15px 16px;
+  border-radius:18px;
+  border:1px solid var(--line);
+  outline:none;
+  background:rgba(242,248,255,.88);
+  color:var(--ink);
+  font-size:15px;
+  line-height:1.7;
+  transition:border-color .24s var(--ease),box-shadow .24s var(--ease),background .24s var(--ease);
+}
+.query-box:focus{background:#fff;border-color:rgba(36,136,255,.62);box-shadow:0 0 0 4px rgba(36,136,255,.13)}
+.controls{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:13px;margin-top:16px}
+.control-card{padding:14px;border-radius:18px;background:rgba(242,248,255,.72);border:1px solid var(--line)}
+.control-head{display:flex;justify-content:space-between;gap:8px;margin-bottom:10px;color:var(--muted);font-size:12px}
+.control-value{color:var(--ink);font-weight:760}
+input[type=range]{-webkit-appearance:none;width:100%;height:5px;border-radius:99px;background:rgba(36,136,255,.18);outline:none}
+input[type=range]::-webkit-slider-thumb{
+  -webkit-appearance:none;width:19px;height:19px;border-radius:50%;
+  background:#fff;border:1px solid rgba(36,136,255,.24);
+  box-shadow:0 3px 10px rgba(36,136,255,.25);
+  cursor:pointer;transition:transform .2s var(--ease)
+}
+input[type=range]::-webkit-slider-thumb:hover{transform:scale(1.12)}
+.tier-list{display:grid;gap:9px;margin-top:16px}
+.tier-item{
+  display:grid;
+  grid-template-columns:52px minmax(0,1fr);
+  gap:10px;
+  align-items:center;
+  padding:10px 12px;
+  border-radius:16px;
+  background:linear-gradient(180deg,#fff,rgba(242,248,255,.76));
+  border:1px solid rgba(42,101,160,.12);
+}
+.tier-label{font-size:12px;font-weight:780;color:var(--blue)}
+.tier-model{min-width:0;color:var(--muted);font-size:12px;line-height:1.35;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.run-btn{
+  width:100%;height:50px;margin-top:18px;
+  border-radius:17px;
+  display:flex;align-items:center;justify-content:center;gap:9px;
+  background:linear-gradient(180deg,var(--blue2),var(--blue));
+  color:#fff;font-weight:720;
+  cursor:pointer;
+  box-shadow:0 15px 30px rgba(36,136,255,.28);
+  transition:transform .26s var(--ease),box-shadow .26s var(--ease),filter .26s var(--ease);
+}
+.run-btn:hover:not(:disabled){transform:translateY(-2px);box-shadow:0 20px 38px rgba(36,136,255,.34);filter:saturate(1.06)}
+.run-btn:active:not(:disabled){transform:scale(.985)}
+.run-btn:disabled{background:#b9c8d8;box-shadow:none;cursor:not-allowed}
+.progress{display:none;margin-top:18px}
+.progress.show{display:block}
+.progress-track{height:6px;border-radius:999px;background:rgba(36,136,255,.14);overflow:hidden}
+.progress-bar{height:100%;width:0;border-radius:inherit;background:linear-gradient(90deg,var(--blue),var(--green));transition:width .55s var(--ease)}
+.steps{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:7px;margin-top:12px}
+.step{padding:8px 4px;border-radius:12px;text-align:center;color:var(--soft);font-size:12px;transition:background .28s var(--ease),color .28s var(--ease),transform .28s var(--ease)}
+.step.active{background:rgba(36,136,255,.12);color:var(--blue);font-weight:760;transform:translateY(-1px)}
+.step.done{color:var(--green)}
+.prog-desc{min-height:20px;margin-top:12px;color:var(--muted);font-size:13px;line-height:1.5}
+.report-shell{min-height:540px;padding:24px;border-radius:26px}
+.empty{min-height:490px;display:grid;place-items:center;text-align:center;color:var(--muted)}
+.empty-mark{
+  width:68px;height:68px;border-radius:22px;margin:0 auto 15px;
+  display:grid;place-items:center;
+  color:var(--blue);
+  background:linear-gradient(145deg,#fff,#e7f3ff);
+  box-shadow:inset 0 1px 0 #fff,0 14px 34px rgba(36,136,255,.16);
+}
+.report{display:grid;gap:18px}
+.r-block{opacity:0;transform:translateY(12px);animation:rise .48s var(--ease) forwards}
+@keyframes rise{to{opacity:1;transform:translateY(0)}}
+.report-head h2{font-size:27px;line-height:1.22;margin:0 0 8px}
+.report-meta{color:var(--muted);font-size:13px;line-height:1.55}
+.review{border-radius:22px;padding:20px;background:linear-gradient(180deg,#fff,#f3f9ff);border:1px solid rgba(36,136,255,.18)}
+.review-title,.group-title{display:flex;align-items:center;gap:8px;font-weight:780;margin-bottom:10px}
+.review-body{margin:0;color:#2c3a4f;font-size:15px;line-height:1.95}
+.group{display:grid;gap:14px}
+.group-title{font-size:19px;margin-top:4px}
+.group-badge{font-size:12px;font-weight:700;color:var(--blue);padding:4px 9px;border-radius:999px;background:rgba(36,136,255,.1)}
+.group-intro{margin:0;color:var(--muted);font-size:14px;line-height:1.78}
+.paper-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,340px),1fr));gap:14px;align-items:start}
+.paper{min-width:0;padding:18px;border:1px solid rgba(42,101,160,.12);border-radius:22px;background:#fff;box-shadow:0 8px 24px rgba(35,92,148,.07);transition:transform .28s var(--ease),box-shadow .28s var(--ease),border-color .28s var(--ease)}
+.paper:hover{transform:translateY(-2px);box-shadow:0 16px 36px rgba(35,92,148,.12);border-color:rgba(36,136,255,.3)}
+.paper-head{display:flex;justify-content:space-between;gap:12px;align-items:flex-start}
+.paper-title{font-size:16px;line-height:1.45;font-weight:760;margin:0}
+.read-badge{flex:0 0 auto;border-radius:999px;padding:4px 9px;background:rgba(36,136,255,.1);color:var(--blue);font-size:11px;font-weight:760;white-space:nowrap}
+.paper-meta{font-size:12px;line-height:1.55;color:var(--muted);margin:8px 0 13px}
+.paper-meta a{color:var(--blue);text-decoration:none}
+.takeaway{margin:0 0 14px;padding:12px 13px;border-radius:16px;background:linear-gradient(180deg,#f3f9ff,#eaf5ff);border:1px solid rgba(36,136,255,.16);font-size:14px;line-height:1.76;color:#233954}
+.summary-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px}
+.summary-section{min-width:0;padding:11px;border-radius:15px;background:#f8fbff;border:1px solid rgba(42,101,160,.1)}
+.summary-section h4{margin:0 0 6px;font-size:12px;color:var(--blue);font-weight:800}
+.summary-section p{margin:0;color:#334155;font-size:13px;line-height:1.68}
+.summary-section.wide{grid-column:1/-1}
+.guide-wrap{width:min(1080px,100%);margin:0 auto;display:grid;gap:18px}
+.guide-hero{border-radius:28px;padding:30px;background:linear-gradient(135deg,rgba(255,255,255,.92),rgba(229,244,255,.88))}
+.guide-hero h1{font-size:32px;line-height:1.16;margin:0 0 10px}
+.guide-hero p{max-width:720px;margin:0;color:var(--muted);font-size:15px;line-height:1.8}
+.guide-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,250px),1fr));gap:14px}
+.guide-card{position:relative;overflow:hidden;border-radius:24px;padding:20px;background:#fff}
+.guide-card:before{content:"";position:absolute;inset:0 0 auto;height:4px;background:linear-gradient(90deg,var(--blue2),var(--blue))}
+.guide-index{width:32px;height:32px;border-radius:11px;display:grid;place-items:center;background:var(--blue3);color:var(--blue);font-weight:800;margin-bottom:12px}
+.guide-card h3{font-size:17px;margin:0 0 9px}
+.guide-card p,.guide-card li{font-size:14px;line-height:1.78;color:var(--muted)}
+.guide-card ul{margin:0;padding-left:18px}
+.guide-note{display:flex;gap:12px;align-items:flex-start;border-radius:24px;padding:18px 20px;background:rgba(255,255,255,.78);border:1px solid rgba(42,101,160,.13)}
+.guide-note b{color:var(--blue)}
+.mask{position:fixed;inset:0;background:rgba(20,46,72,.23);opacity:0;pointer-events:none;transition:opacity .36s var(--ease);backdrop-filter:blur(10px);z-index:50}
+.mask.show{opacity:1;pointer-events:auto}
+.drawer{position:fixed;top:0;right:0;width:500px;max-width:92vw;height:100vh;padding:22px;overflow:auto;background:rgba(247,251,255,.94);border-left:1px solid rgba(42,101,160,.13);box-shadow:-22px 0 60px rgba(35,92,148,.18);transform:translateX(104%);transition:transform .48s var(--ease);backdrop-filter:saturate(180%) blur(24px);z-index:51}
+.drawer.show{transform:translateX(0)}
+.drawer-head{display:flex;justify-content:space-between;align-items:flex-start;gap:12px;margin-bottom:18px}
+.drawer h2{font-size:23px;margin:0 0 5px}
+.drawer-sub{font-size:13px;line-height:1.6;color:var(--muted);margin:0}
+.close-btn{width:35px;height:35px;border-radius:50%;background:rgba(36,136,255,.1);cursor:pointer;color:var(--blue);font-size:20px}
+.setting-group{border-radius:22px;padding:16px;margin-bottom:14px;background:#fff}
+.setting-group h3{font-size:15px;margin:0 0 4px}
+.group-note{font-size:12px;color:var(--muted);line-height:1.55;margin:0 0 14px}
+.form-grid{display:grid;gap:13px}
+.fld label{display:block;font-size:13px;font-weight:720;margin-bottom:7px}
+.fld input,.fld select,.fld textarea{width:100%;border:1px solid rgba(42,101,160,.15);border-radius:13px;padding:0 12px;background:var(--surface2);outline:none;color:var(--ink);transition:border-color .22s var(--ease),box-shadow .22s var(--ease),background .22s var(--ease)}
+.fld input,.fld select{height:43px}
+.fld textarea{min-height:108px;padding:11px 12px;resize:vertical;line-height:1.55}
+.fld input:focus,.fld select:focus,.fld textarea:focus{border-color:rgba(36,136,255,.62);box-shadow:0 0 0 4px rgba(36,136,255,.12);background:#fff}
+.hint{font-size:12px;line-height:1.56;color:var(--muted);margin-top:6px}
+.hint a{color:var(--blue);text-decoration:none}
+.mirror-row{display:flex;gap:8px;align-items:center}
+.mirror-row input{min-width:0}
+.mini-btn{height:43px;white-space:nowrap;padding:0 12px;border-radius:13px;background:rgba(36,136,255,.12);color:var(--blue);cursor:pointer;font-weight:700}
+.optional-head{display:flex;align-items:center;justify-content:space-between;gap:12px;cursor:pointer;user-select:none}
+.optional-tag{font-size:12px;color:var(--blue);background:rgba(36,136,255,.1);padding:4px 9px;border-radius:999px}
+.optional-body{display:none;margin-top:14px}
+.setting-group.open .optional-body{display:grid}
+.save-btn{position:sticky;bottom:0;width:100%;height:47px;border-radius:16px;background:linear-gradient(180deg,#2c3f5e,#18263d);color:#fff;font-weight:760;cursor:pointer;box-shadow:0 -10px 28px rgba(247,251,255,.82),0 12px 28px rgba(24,38,61,.18)}
+.toast{position:fixed;left:50%;bottom:26px;z-index:80;transform:translateX(-50%) translateY(16px);opacity:0;pointer-events:none;padding:11px 16px;border-radius:999px;color:#fff;background:rgba(23,32,51,.94);box-shadow:0 10px 30px rgba(23,32,51,.2);transition:opacity .28s var(--ease),transform .28s var(--ease)}
+.toast.show{opacity:1;transform:translateX(-50%) translateY(0)}
+.spin{animation:spin .9s linear infinite}
+@keyframes spin{to{transform:rotate(360deg)}}
+@media (max-width:900px){
+  .workspace{grid-template-columns:1fr}
+  .panel{position:static}
+  .report-shell{min-height:380px}
+}
+@media (max-width:620px){
+  .top{height:auto;min-height:66px;flex-wrap:wrap;padding:10px 14px}
+  .brand{min-width:0}
+  .nav{order:3;width:100%;justify-content:center}
+  .nav-btn{flex:1;min-width:0}
+  .main{padding:18px 14px 36px}
+  .controls{grid-template-columns:1fr}
+  .summary-grid{grid-template-columns:1fr}
+  .paper-head{display:grid}
+  .panel,.report-shell,.guide-hero{border-radius:22px;padding:18px}
+}
+</style>
+</head>
+<body>
+<div class="app">
+  <header class="top">
+    <div class="brand">
+      <div class="logo" aria-hidden="true">
+        <svg width="22" height="22" viewBox="0 0 24 24" fill="none">
+          <path d="M6.5 5.5h7.2c2.6 0 4.3 1.5 4.3 3.8s-1.7 3.8-4.3 3.8H9v5.4H6.5v-13z" fill="currentColor" opacity=".95"/>
+          <path d="M9 8h4.3c1.2 0 2 .5 2 1.4s-.8 1.5-2 1.5H9V8z" fill="#eaf5ff"/>
+          <path d="M14.4 13.1l4.1 5.4h-3l-3.8-5.4h2.7z" fill="#eaf5ff" opacity=".92"/>
+        </svg>
+      </div>
+      <div>
+        <div class="brand-name">PaperLens</div>
+        <div class="brand-sub">论文情报分析台</div>
+      </div>
+    </div>
+    <nav class="nav">
+      <button class="nav-btn active" data-page="work">分析</button>
+      <button class="nav-btn" data-page="guide">使用说明</button>
+    </nav>
+    <div class="top-actions">
+      <button class="icon-btn" id="openSet" type="button">
+        <span aria-hidden="true">设置</span>
+      </button>
+    </div>
+  </header>
+
+  <main class="main">
+    <section class="page active" id="page-work">
+      <div class="workspace">
+        <aside class="panel">
+          <p class="kicker">RESEARCH BRIEF</p>
+          <h1>从研究问题生成可执行的论文情报</h1>
+          <p class="subcopy">检索、筛选、精读与路线归纳一次完成，输出面向决策和方案设计的结构化综述。</p>
+          <label class="field-label" for="query">研究需求</label>
+          <textarea class="query-box" id="query" rows="4" placeholder="例如：从单张图像生成 3D 模型，关注 image-to-3D、扩散模型、重建质量评估和工程落地限制"></textarea>
+
+          <div class="controls">
+            <div class="control-card">
+              <div class="control-head"><span>论文数量</span><span class="control-value" id="numV">15</span></div>
+              <input type="range" id="num" min="5" max="25" value="15" step="1">
+            </div>
+            <div class="control-card">
+              <div class="control-head"><span>时间范围</span><span class="control-value"><span id="yearV">3</span> 年</span></div>
+              <input type="range" id="year" min="1" max="8" value="3" step="1">
+            </div>
+          </div>
+
+          <div class="tier-list" id="qShow">
+            <div class="tier-item"><div class="tier-label">检索</div><div class="tier-model" id="chip_cheap">未配置</div></div>
+            <div class="tier-item"><div class="tier-label">精读</div><div class="tier-model" id="chip_main">未配置</div></div>
+            <div class="tier-item"><div class="tier-label">综述</div><div class="tier-model" id="chip_premium">未配置</div></div>
+          </div>
+
+          <button class="run-btn" id="run" type="button">
+            <span id="runIcon">→</span><span id="runTxt">开始分析</span>
+          </button>
+
+          <div class="progress" id="flow">
+            <div class="progress-track"><div class="progress-bar" id="progressBar"></div></div>
+            <div class="steps">
+              <div class="step" data-s="search">检索</div>
+              <div class="step" data-s="filter">筛选</div>
+              <div class="step" data-s="read">精读</div>
+              <div class="step" data-s="write">成稿</div>
+            </div>
+            <div class="prog-desc" id="progDesc"></div>
+          </div>
+        </aside>
+
+        <section class="report-shell">
+          <div class="empty" id="emptyState">
+            <div>
+              <div class="empty-mark">
+                <svg width="30" height="30" viewBox="0 0 24 24" fill="none">
+                  <path d="M5 5h9l5 5v9H5V5z" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round"/>
+                  <path d="M14 5v5h5M8 14h8M8 17h6" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/>
+                </svg>
+              </div>
+              <div style="font-weight:760;color:var(--ink);margin-bottom:6px">等待生成报告</div>
+              <div style="font-size:14px;line-height:1.75">宽屏自动多列，窄屏自动单列。拖动窗口时卡片会重新排列。</div>
+            </div>
+          </div>
+          <div class="report" id="report"></div>
+        </section>
+      </div>
+    </section>
+
+    <section class="page" id="page-guide">
+      <div class="guide-wrap">
+        <div class="guide-hero">
+          <p class="kicker">OPERATING GUIDE</p>
+          <h1>用 PaperLens 快速建立论文版图</h1>
+          <p>它适合用来做技术预研、竞品路线梳理、方案立项前的文献扫描。流程很短：配置模型，输入需求，等待检索和精读，最后查看按路线分组的报告。</p>
+        </div>
+        <div class="guide-grid">
+          <article class="guide-card">
+            <div class="guide-index">01</div>
+            <h3>配置模型</h3>
+            <ul>
+              <li>至少填写一个模型服务的 API Key。</li>
+              <li>检索、精读、综述三个档位可以分别选择不同模型。</li>
+              <li>精读档位最影响单篇论文提炼质量。</li>
+            </ul>
+          </article>
+          <article class="guide-card">
+            <div class="guide-index">02</div>
+            <h3>输入研究 brief</h3>
+            <ul>
+              <li>写清研究对象、技术方向、约束条件和评估指标。</li>
+              <li>论文数量越多，运行时间和模型费用越高。</li>
+              <li>时间范围用于限制近期论文。</li>
+            </ul>
+          </article>
+          <article class="guide-card">
+            <div class="guide-index">03</div>
+            <h3>阅读结构化报告</h3>
+            <ul>
+              <li>报告按技术路线自动分组。</li>
+              <li>核心论文显示全文精读结论，长尾论文显示摘要级研判。</li>
+              <li>离线 HTML 报告会保存到 reports 目录。</li>
+            </ul>
+          </article>
+          <article class="guide-card">
+            <div class="guide-index">04</div>
+            <h3>调整下载源</h3>
+            <p>默认使用 arxiv.org。国内网络下载 PDF 慢时，可以在设置里使用中科院理论物理所历史镜像地址：</p>
+            <p><b>http://xxx.itp.ac.cn</b></p>
+          </article>
+        </div>
+        <div class="guide-note">
+          <div><b>提示：</b>arXiv 镜像只影响 PDF 下载，不影响论文检索。若镜像不可用，程序会回退到官方 PDF 地址。</div>
+        </div>
+      </div>
+    </section>
+  </main>
+</div>
+
+<div class="mask" id="mask"></div>
+<aside class="drawer" id="drawer" aria-hidden="true">
+  <div class="drawer-head">
+    <div>
+      <h2>设置</h2>
+      <p class="drawer-sub">配置模型服务、分工策略和检索下载源。已保存的 Key 会自动掩码显示。</p>
+    </div>
+    <button class="close-btn" id="closeSet" type="button">×</button>
+  </div>
+
+  <section class="setting-group">
+    <h3>模型服务</h3>
+    <p class="group-note">填写哪个厂商的 Key，就可以在模型分工里选择哪个厂商。Base URL 留空时使用官方地址。</p>
+    <div class="form-grid">
+      <div class="fld"><label for="key_anthropic">Claude / Anthropic</label><input type="password" id="key_anthropic" placeholder="sk-ant-..."><input type="text" id="base_url_anthropic" placeholder="Base URL 留空 = 官方默认" style="margin-top:8px"><div class="hint"><a href="https://console.anthropic.com" target="_blank">console.anthropic.com</a></div></div>
+      <div class="fld"><label for="key_openai">GPT / OpenAI</label><input type="password" id="key_openai" placeholder="sk-..."><input type="text" id="base_url_openai" placeholder="Base URL 留空 = https://api.openai.com/v1" style="margin-top:8px"><div class="hint"><a href="https://platform.openai.com/api-keys" target="_blank">platform.openai.com/api-keys</a></div></div>
+      <div class="fld"><label for="key_deepseek">DeepSeek</label><input type="password" id="key_deepseek" placeholder="sk-..."><input type="text" id="base_url_deepseek" placeholder="Base URL 留空 = https://api.deepseek.com/v1" style="margin-top:8px"><div class="hint"><a href="https://platform.deepseek.com" target="_blank">platform.deepseek.com</a></div></div>
+      <div class="fld"><label for="key_qwen">通义千问 / 阿里</label><input type="password" id="key_qwen" placeholder="sk-..."><input type="text" id="base_url_qwen" placeholder="Base URL 留空 = 百炼兼容模式" style="margin-top:8px"><div class="hint"><a href="https://bailian.console.aliyun.com" target="_blank">百炼控制台</a></div></div>
+      <div class="fld"><label for="key_kimi">Kimi / Moonshot</label><input type="password" id="key_kimi" placeholder="sk-..."><input type="text" id="base_url_kimi" placeholder="Base URL 留空 = https://api.moonshot.cn/v1" style="margin-top:8px"><div class="hint"><a href="https://platform.moonshot.cn" target="_blank">platform.moonshot.cn</a></div></div>
+    </div>
+  </section>
+
+  <section class="setting-group">
+    <h3>模型分工</h3>
+    <p class="group-note">检索档负责关键词和排序，精读档负责逐篇提炼，综述档负责最终归纳。</p>
+    <div class="form-grid">
+      <div class="fld"><label for="tier_cheap">检索档</label><select id="tier_cheap"></select></div>
+      <div class="fld"><label for="tier_main">精读档</label><select id="tier_main"></select></div>
+      <div class="fld"><label for="tier_premium">综述档</label><select id="tier_premium"></select></div>
+      <div class="fld">
+        <label for="custom_models_text">自定义模型</label>
+        <textarea id="custom_models_text" placeholder="一行一个，例如：&#10;openai:gpt-4.1&#10;deepseek:deepseek-v3&#10;qwen:qwen3-max"></textarea>
+        <div class="hint">支持 anthropic、openai、deepseek、qwen、kimi。保存后会出现在上面的模型下拉框里。</div>
+      </div>
+    </div>
+  </section>
+
+  <section class="setting-group">
+    <h3>检索与下载</h3>
+    <p class="group-note">Semantic Scholar Key 可留空；arXiv 镜像用于加速 PDF 下载。</p>
+    <div class="form-grid">
+      <div class="fld"><label for="semantic_scholar_key">Semantic Scholar Key</label><input type="password" id="semantic_scholar_key" placeholder="留空也能使用"><div class="hint"><a href="https://www.semanticscholar.org/product/api" target="_blank">免费申请 API Key</a></div></div>
+      <div class="fld">
+        <label for="arxiv_mirror">arXiv PDF 源</label>
+        <div class="mirror-row">
+          <input type="text" id="arxiv_mirror" placeholder="留空 = 官方 arxiv.org">
+          <button class="mini-btn" id="fillMirror" type="button">填入中科院</button>
+        </div>
+        <div class="hint">中科院理论物理所历史镜像：http://xxx.itp.ac.cn。若镜像下载失败，程序会回退到官方源。</div>
+      </div>
+    </div>
+  </section>
+
+  <section class="setting-group" id="mailGroup">
+    <div class="optional-head" id="mailToggle">
+      <div>
+        <h3>邮件发送</h3>
+        <p class="group-note" style="margin-bottom:0">可选项。当前分析流程不依赖邮件配置。</p>
+      </div>
+      <span class="optional-tag">可选</span>
+    </div>
+    <div class="form-grid optional-body">
+      <div class="fld"><label for="smtp_user">SMTP 账号</label><input type="text" id="smtp_user" placeholder="your@qq.com"></div>
+      <div class="fld"><label for="smtp_password">SMTP 授权码</label><input type="password" id="smtp_password" placeholder="不是登录密码"></div>
+    </div>
+  </section>
+
+  <button class="save-btn" id="saveSet" type="button">保存设置</button>
+</aside>
+<div class="toast" id="toast"></div>
+
+<script src="/static/app.js"></script>
+</body>
+</html>

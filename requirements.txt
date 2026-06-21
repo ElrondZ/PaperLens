@@ -1,0 +1,8 @@
+flask
+pywebview
+anthropic
+arxiv
+pymupdf
+requests
+openai
+pyinstaller

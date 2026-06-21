@@ -1,0 +1,22 @@
+{
+  "key_anthropic": "",
+  "key_openai": "",
+  "key_deepseek": "",
+  "key_qwen": "",
+  "key_kimi": "",
+  "base_url_anthropic": "",
+  "base_url_openai": "",
+  "base_url_deepseek": "",
+  "base_url_qwen": "",
+  "base_url_kimi": "",
+  "custom_models_text": "",
+  "tier_cheap": "anthropic:claude-haiku-4-5-20251001",
+  "tier_main": "anthropic:claude-sonnet-4-6",
+  "tier_premium": "anthropic:claude-opus-4-8",
+  "semantic_scholar_key": "",
+  "arxiv_mirror": "",
+  "smtp_host": "smtp.qq.com",
+  "smtp_port": "465",
+  "smtp_user": "",
+  "smtp_password": ""
+}
